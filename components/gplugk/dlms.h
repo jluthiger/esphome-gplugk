@@ -21,4 +21,11 @@ static constexpr uint16_t MAX_MESSAGE_LENGTH = 512;
 // Kamstrup security byte: encryption + authentication (bits 4+5 set)
 static constexpr uint8_t KAMSTRUP_SECURITY_BYTE = 0x30;
 
+// Data-notification APDU header prepended to decrypted message
+static constexpr uint8_t DATA_NOTIFICATION_HEADER[] = {
+    0x0F, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x07, 0xE9, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x80, 0x00, 0x00,
+};
+static constexpr uint8_t DATA_NOTIFICATION_HEADER_SIZE = sizeof(DATA_NOTIFICATION_HEADER);
+
 }  // namespace esphome::gplugk

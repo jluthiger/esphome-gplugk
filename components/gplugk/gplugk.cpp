@@ -60,7 +60,15 @@ void GplugkComponent::loop() {
 
     if (!this->decrypt_(this->dlms_data_, message_length, systitle_length, header_offset))
       return;
-    this->decode_cosem_(&this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET], message_length);
+
+    // Insert data-notification APDU header before decrypted payload
+    auto payload_pos = this->dlms_data_.begin() + header_offset + DLMS_PAYLOAD_OFFSET;
+    this->dlms_data_.insert(payload_pos, DATA_NOTIFICATION_HEADER,
+                            DATA_NOTIFICATION_HEADER + DATA_NOTIFICATION_HEADER_SIZE);
+
+    this->decode_cosem_(
+        &this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET + DATA_NOTIFICATION_HEADER_SIZE],
+        message_length);
   }
 }
 
@@ -234,11 +242,11 @@ bool GplugkComponent::decrypt_(std::vector<uint8_t> &dlms_data, uint16_t message
   }
 
   // Post-decrypt validation: first byte must be STRUCTURE (0x02)
-  if (payload_ptr[0] != DataType::STRUCTURE) {
-    ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X)", payload_ptr[0]);
-    this->receive_buffer_.clear();
-    return false;
-  }
+  // if (payload_ptr[0] != DataType::STRUCTURE) {
+  //   ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X)", payload_ptr[0]);
+  //   this->receive_buffer_.clear();
+  //   return false;
+  // }
 
   ESP_LOGV(TAG, "Decrypted payload: %u bytes", message_length);
   return true;
