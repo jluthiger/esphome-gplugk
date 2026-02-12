@@ -74,15 +74,12 @@ namespace esphome::gplugk
         return;
 
       // Insert data-notification APDU header before decrypted payload
-      // auto payload_pos = this->dlms_data_.begin() + header_offset + DLMS_PAYLOAD_OFFSET;
-      // this->dlms_data_.insert(payload_pos, DATA_NOTIFICATION_HEADER,
-      //                         DATA_NOTIFICATION_HEADER + DATA_NOTIFICATION_HEADER_SIZE);
+      auto payload_pos = this->dlms_data_.begin() + header_offset + DLMS_PAYLOAD_OFFSET;
+      this->dlms_data_.insert(payload_pos, DATA_NOTIFICATION_HEADER,
+                              DATA_NOTIFICATION_HEADER + DATA_NOTIFICATION_HEADER_SIZE);
 
-      // this->decode_cosem_(
-      //     &this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET + DATA_NOTIFICATION_HEADER_SIZE],
-      //     message_length);
-
-      this->decode_cosem_(&this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET], message_length);
+      this->decode_cosem_(&this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET],
+                          message_length + DATA_NOTIFICATION_HEADER_SIZE);
     }
   }
 
@@ -276,17 +273,9 @@ namespace esphome::gplugk
     }
 
     // Post-decrypt validation: first byte must be STRUCTURE (0x02)
-    // if (payload_ptr[0] != DataType::STRUCTURE) {
-    //   ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X)", payload_ptr[0]);
-    //   this->receive_buffer_.clear();
-    //   return false;
-    // }
-
     if (payload_ptr[0] != DataType::STRUCTURE)
     {
-      int payload_len = message_length;
-      ESP_LOG_BUFFER_HEXDUMP(TAG, payload_ptr, payload_len, ESP_LOG_ERROR);
-      ESP_LOGE(TAG, "Decryption failed: unexpected first byte 0x%02X (expected STRUCTURE 0x02)", payload_ptr[0]);
+      ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X)", payload_ptr[0]);
       this->receive_buffer_.clear();
       return false;
     }
@@ -297,9 +286,25 @@ namespace esphome::gplugk
 
   void GplugkComponent::decode_cosem_(uint8_t *plaintext, uint16_t message_length)
   {
-    ESP_LOGV(TAG, "Decoding COSEM structure");
+    ESP_LOGV(TAG, "Decoding COSEM data-notification");
     MeterData data{};
     uint16_t pos = 0;
+
+    // Skip data-notification APDU header: tag(1) + invoke-id(4) + date-time(1+12) = 18 bytes
+    if (pos + DATA_NOTIFICATION_HEADER_SIZE > message_length)
+    {
+      ESP_LOGE(TAG, "COSEM: Too short for data-notification header");
+      this->receive_buffer_.clear();
+      return;
+    }
+
+    if (plaintext[pos] != 0x0F)
+    {
+      ESP_LOGE(TAG, "COSEM: Expected data-notification tag 0x0F, got 0x%02X", plaintext[pos]);
+      this->receive_buffer_.clear();
+      return;
+    }
+    pos += DATA_NOTIFICATION_HEADER_SIZE;
 
     // Parse STRUCTURE header
     if (pos + 2 > message_length)
@@ -354,8 +359,11 @@ namespace esphome::gplugk
 
     ESP_LOGV(TAG, "COSEM: Meter name: %s", data.meter_name);
 
-    // Parse 32 OBIS entries (each is 2 structure elements: OBIS code + value)
-    for (int entry = 0; entry < 32 && pos < message_length; entry++)
+    // Each OBIS entry uses 2 structure elements (code + value), meter_name uses 1
+    int obis_count = (element_count - 1) / 2;
+    ESP_LOGV(TAG, "COSEM: Expecting %d OBIS entries", obis_count);
+
+    for (int entry = 0; entry < obis_count && pos < message_length; entry++)
     {
       // Read OBIS code: OCTET_STRING (0x09) + length (0x06) + 6-byte code
       if (pos + 8 > message_length)
