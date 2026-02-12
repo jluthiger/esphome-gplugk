@@ -18,6 +18,8 @@ namespace esphome::gplugk
     GPLUGK_SENSOR_LIST(GPLUGK_LOG_SENSOR, )
 #define GPLUGK_LOG_TEXT_SENSOR(s) LOG_TEXT_SENSOR("  ", #s, this->s##_text_sensor_);
     GPLUGK_TEXT_SENSOR_LIST(GPLUGK_LOG_TEXT_SENSOR, )
+
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
   }
 
   void GplugkComponent::loop()

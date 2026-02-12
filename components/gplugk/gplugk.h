@@ -2,7 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/defines.h"
-#include "esp_log.h"
+#include "esphome/core/log.h"
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
 #endif
