@@ -282,6 +282,13 @@ namespace esphome::gplugk
     //   return false;
     // }
 
+    if (payload_ptr[0] != DataType::STRUCTURE)
+    {
+      int payload_len = message_length;
+      ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X). Full payload (%d bytes): %*X",
+               payload_ptr[0], payload_len, payload_len * 2, payload_ptr); // %*X: width=len*2, no spaces
+    }
+
     ESP_LOGV(TAG, "Decrypted payload: %u bytes", message_length);
     return true;
   }
