@@ -17,7 +17,7 @@ enum DataType : uint8_t {
 static constexpr uint8_t OBIS_C = 2;
 static constexpr uint8_t OBIS_D = 3;
 
-// OBIS CD values (C << 8 | D) for all 32 Kamstrup entries
+// OBIS CD values (C << 8 | D) for Kamstrup entries
 
 // Energy totals
 static constexpr uint16_t OBIS_ACTIVE_ENERGY_PLUS = 0x0108;

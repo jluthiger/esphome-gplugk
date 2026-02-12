@@ -298,9 +298,9 @@ namespace esphome::gplugk
       return;
     }
 
-    if (plaintext[pos] != 0x0F)
+    if (plaintext[pos] != DATA_NOTIFICATION_TAG)
     {
-      ESP_LOGE(TAG, "COSEM: Expected data-notification tag 0x0F, got 0x%02X", plaintext[pos]);
+      ESP_LOGE(TAG, "COSEM: Expected data-notification tag 0x%02X, got 0x%02X", DATA_NOTIFICATION_TAG, plaintext[pos]);
       this->receive_buffer_.clear();
       return;
     }

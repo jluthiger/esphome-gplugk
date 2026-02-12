@@ -22,9 +22,14 @@ static constexpr uint16_t MAX_MESSAGE_LENGTH = 512;
 static constexpr uint8_t KAMSTRUP_SECURITY_BYTE = 0x30;
 
 // Data-notification APDU header prepended to decrypted message
+// Layout: tag(1) + long-invoke-id-and-priority(4) + date-time(1+12) = 18 bytes
+static constexpr uint8_t DATA_NOTIFICATION_TAG = 0x0F;
 static constexpr uint8_t DATA_NOTIFICATION_HEADER[] = {
-    0x0F, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x07, 0xE9, 0x01,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x80, 0x00, 0x00,
+    0x0F,                                                 // data-notification tag
+    0x00, 0x00, 0x00, 0x00,                               // long-invoke-id-and-priority
+    0x0C,                                                 // date-time OCTET_STRING (12 bytes)
+    0x07, 0xE9, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,      // year=2025, month=1, rest=unspecified
+    0xFF, 0x80, 0x00, 0x00,                               // deviation=-128 (not specified)
 };
 static constexpr uint8_t DATA_NOTIFICATION_HEADER_SIZE = sizeof(DATA_NOTIFICATION_HEADER);
 
