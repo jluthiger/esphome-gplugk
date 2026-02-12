@@ -269,6 +269,9 @@ namespace esphome::gplugk
       return false;
     }
 
+    // Log decrypted payload for debugging (hex dump)
+    ESP_LOG_BUFFER_HEXDUMP(TAG, payload_ptr, message_length, ESP_LOG_DEBUG);
+
     // Post-decrypt validation: first byte must be data-notification tag (0x0F)
     if (payload_ptr[0] != DATA_NOTIFICATION_TAG)
     {

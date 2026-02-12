@@ -1,0 +1,132 @@
+# ESPHome config for gplugk component — Kamstrup smart meter reader on ESP32-C3
+#
+# Prerequisites:
+#   1. Create a secrets.yaml with wifi_ssid and wifi_password
+#   2. Replace the decryption_key with the key from your energy provider
+#
+# Build:  esphome compile esp-gplugk.example.yaml
+# Flash:  esphome run esp-gplugk.example.yaml
+
+esphome:
+  name: esp-gplugk
+  friendly_name: "Smart Meter gplugk"
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+external_components:
+  - source:
+      type: local
+      path: components/
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+  level: DEBUG
+
+api:
+
+ota:
+  platform: esphome
+
+uart:
+  rx_pin: GPIO4
+  baud_rate: 2400
+  rx_buffer_size: 1024
+
+gplugk:
+  decryption_key: "00000000000000000000000000000000" # Replace with your 32-hex-char key
+
+# --- Numeric sensors ---
+sensor:
+  - platform: gplugk
+
+    # Energy totals
+    active_energy_plus:
+      name: "Active Energy +"
+    active_energy_minus:
+      name: "Active Energy -"
+    reactive_energy_plus:
+      name: "Reactive Energy +"
+    reactive_energy_minus:
+      name: "Reactive Energy -"
+
+    # Meter ID
+    meter_id:
+      name: "Meter ID"
+
+    # Total power
+    active_power_plus:
+      name: "Active Power +"
+    active_power_minus:
+      name: "Active Power -"
+    reactive_power_plus:
+      name: "Reactive Power +"
+    reactive_power_minus:
+      name: "Reactive Power -"
+
+    # Voltage per phase
+    voltage_l1:
+      name: "Voltage L1"
+    voltage_l2:
+      name: "Voltage L2"
+    voltage_l3:
+      name: "Voltage L3"
+
+    # Current per phase
+    current_l1:
+      name: "Current L1"
+    current_l2:
+      name: "Current L2"
+    current_l3:
+      name: "Current L3"
+
+    # Active power per phase
+    active_power_l1:
+      name: "Active Power L1"
+    active_power_l2:
+      name: "Active Power L2"
+    active_power_l3:
+      name: "Active Power L3"
+    active_power_minus_l1:
+      name: "Active Power - L1"
+    active_power_minus_l2:
+      name: "Active Power - L2"
+    active_power_minus_l3:
+      name: "Active Power - L3"
+
+    # Power factor
+    power_factor:
+      name: "Power Factor"
+    power_factor_l1:
+      name: "Power Factor L1"
+    power_factor_l2:
+      name: "Power Factor L2"
+    power_factor_l3:
+      name: "Power Factor L3"
+
+    # Active energy per phase
+    active_energy_plus_l1:
+      name: "Active Energy + L1"
+    active_energy_plus_l2:
+      name: "Active Energy + L2"
+    active_energy_plus_l3:
+      name: "Active Energy + L3"
+    active_energy_minus_l1:
+      name: "Active Energy - L1"
+    active_energy_minus_l2:
+      name: "Active Energy - L2"
+    active_energy_minus_l3:
+      name: "Active Energy - L3"
+
+# --- Text sensors ---
+text_sensor:
+  - platform: gplugk
+    timestamp:
+      name: "Timestamp"
+    meter_name:
+      name: "Meter Name"
