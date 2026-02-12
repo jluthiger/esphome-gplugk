@@ -18,8 +18,6 @@ namespace esphome::gplugk
     GPLUGK_SENSOR_LIST(GPLUGK_LOG_SENSOR, )
 #define GPLUGK_LOG_TEXT_SENSOR(s) LOG_TEXT_SENSOR("  ", #s, this->s##_text_sensor_);
     GPLUGK_TEXT_SENSOR_LIST(GPLUGK_LOG_TEXT_SENSOR, )
-
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
   }
 
   void GplugkComponent::loop()
@@ -272,7 +270,14 @@ namespace esphome::gplugk
     }
 
     // Log decrypted payload for debugging (hex dump)
-    ESP_LOG_BUFFER_HEXDUMP(TAG, payload_ptr, message_length, ESP_LOG_DEBUG);
+    if (ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_VERBOSE) {
+      char hex_buf[message_length * 3 + 1];
+      for (uint16_t i = 0; i < message_length; i++) {
+        sprintf(hex_buf + i * 3, "%02X ", payload_ptr[i]);
+      }
+      hex_buf[message_length * 3] = '\0';
+      ESP_LOGV(TAG, "Decrypted payload hex: %s", hex_buf);
+    }
 
     // Post-decrypt validation: first byte must be data-notification tag (0x0F)
     if (payload_ptr[0] != DATA_NOTIFICATION_TAG)
