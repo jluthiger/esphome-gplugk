@@ -73,13 +73,10 @@ namespace esphome::gplugk
       if (!this->decrypt_(this->dlms_data_, message_length, systitle_length, header_offset))
         return;
 
-      // Insert data-notification APDU header before decrypted payload
-      auto payload_pos = this->dlms_data_.begin() + header_offset + DLMS_PAYLOAD_OFFSET;
-      this->dlms_data_.insert(payload_pos, DATA_NOTIFICATION_HEADER,
-                              DATA_NOTIFICATION_HEADER + DATA_NOTIFICATION_HEADER_SIZE);
-
-      this->decode_cosem_(&this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET],
-                          message_length + DATA_NOTIFICATION_HEADER_SIZE);
+      // Strip data-notification APDU header from decrypted payload
+      this->decode_cosem_(
+          &this->dlms_data_[header_offset + DLMS_PAYLOAD_OFFSET + DATA_NOTIFICATION_HEADER_SIZE],
+          message_length - DATA_NOTIFICATION_HEADER_SIZE);
     }
   }
 
@@ -272,10 +269,10 @@ namespace esphome::gplugk
       return false;
     }
 
-    // Post-decrypt validation: first byte must be STRUCTURE (0x02)
-    if (payload_ptr[0] != DataType::STRUCTURE)
+    // Post-decrypt validation: first byte must be data-notification tag (0x0F)
+    if (payload_ptr[0] != DATA_NOTIFICATION_TAG)
     {
-      ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected STRUCTURE 0x02, got 0x%02X)", payload_ptr[0]);
+      ESP_LOGE(TAG, "COSEM: Decrypted data invalid (expected 0x%02X, got 0x%02X)", DATA_NOTIFICATION_TAG, payload_ptr[0]);
       this->receive_buffer_.clear();
       return false;
     }
@@ -286,25 +283,9 @@ namespace esphome::gplugk
 
   void GplugkComponent::decode_cosem_(uint8_t *plaintext, uint16_t message_length)
   {
-    ESP_LOGV(TAG, "Decoding COSEM data-notification");
+    ESP_LOGV(TAG, "Decoding COSEM structure");
     MeterData data{};
     uint16_t pos = 0;
-
-    // Skip data-notification APDU header: tag(1) + invoke-id(4) + date-time(1+12) = 18 bytes
-    if (pos + DATA_NOTIFICATION_HEADER_SIZE > message_length)
-    {
-      ESP_LOGE(TAG, "COSEM: Too short for data-notification header");
-      this->receive_buffer_.clear();
-      return;
-    }
-
-    if (plaintext[pos] != DATA_NOTIFICATION_TAG)
-    {
-      ESP_LOGE(TAG, "COSEM: Expected data-notification tag 0x%02X, got 0x%02X", DATA_NOTIFICATION_TAG, plaintext[pos]);
-      this->receive_buffer_.clear();
-      return;
-    }
-    pos += DATA_NOTIFICATION_HEADER_SIZE;
 
     // Parse STRUCTURE header
     if (pos + 2 > message_length)
