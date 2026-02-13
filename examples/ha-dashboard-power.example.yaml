@@ -48,7 +48,7 @@ views:
           - entity: sensor.esp_gplugk_active_power_l3_2
             name: Active Power - L3
       - type: history-graph
-        title: Power Trend (6 h)
+        title: Power History (6 h)
         hours_to_show: 6
         entities:
           - entity: sensor.esp_gplugk_active_power_plus

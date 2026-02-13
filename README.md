@@ -68,6 +68,11 @@ external_components:
 
 ## Configuration
 
+see examples:
+
+- for [esphome](./examples/esp-gplugk.example.yaml)
+- for [home assistant](./examples/ha-dashboard-power.example.yaml)
+
 ### Minimal Example
 
 ```yaml
