@@ -1,25 +1,53 @@
 # ESPHome Component for the gPlugK
 
-An ESPHome external component for reading encrypted DLMS/COSEM data from Kamstrup Omnipower smart meters, designed for use with the [gPlugK IoT-adapter](https://gplug.ch/produkte/gplugk/).
+![Home Assistant Dashboard showing active power sensors from the gPlugK smart meter integration](ha-dashboard.png)
 
-## Features
+## Overview
 
-- Reads encrypted DLMS/COSEM data via HDLC framing over UART
-- AES-128-GCM decryption using mbedTLS (ESP32)
-- Exposes energy, power, voltage, current, and power factor as Home Assistant sensors
-- Macro-based sensor registration -- only configured sensors are compiled in
+This project connects a Kamstrup Omnipower smart meter to Home Assistant using three main components that work together in a pipeline:
+
+```text
+Smart Meter  -->  gPlugK  -->  ESPHome  -->  Home Assistant
+  (M-Bus)       (hardware)    (firmware)      (dashboard)
+```
+
+### gPlugK -- The Hardware Adapter
+
+The [gPlugK](https://gplug.ch/produkte/gplugk/) is a compact IoT adapter that plugs directly into the customer interface ([CII/HAN](https://kamstrup-delivery.sitecorecontenthub.cloud/api/public/content/63407-downloadOriginal?v=b498c1b7)) of the Kamstrup Omnipower smart meter. It contains:
+
+- An **ESP32-C3** microcontroller with Wi-Fi connectivity
+- An **UART interface** that converts the meter's signal to a serial data stream in GPIO4
+- A **status LED** (GPIO6) that blinks when data is received from the meter
+- A USB-C port for initial flashing and debugging
+
+The adapter receives encrypted DLMS/COSEM frames from the smart meter at 2400 baud over its UART interface. No soldering or external wiring is required -- just plug it in.
+
+### ESPHome -- The Firmware
+
+[ESPHome](https://esphome.io/) is an open-source system for building custom firmware for ESP32 and ESP8266 microcontrollers. This repository provides a custom ESPHome component (`gplugk`) that handles the complete protocol stack running on the gPlugK adapter:
+
+1. **UART reception** -- Reads raw bytes from the smart meter via the M-Bus transceiver
+2. **HDLC framing** -- Validates and extracts payloads from HDLC frames
+3. **DLMS/COSEM parsing** -- Interprets the application-layer protocol used by the meter
+4. **AES-128-GCM decryption** -- Decrypts the payload using a key provided by your energy provider (via mbedTLS on ESP32)
+5. **OBIS code decoding** -- Maps standardized OBIS identifiers to human-readable measurements (voltage, current, power, energy, power factor, timestamp, meter ID)
+
+The firmware is configured declaratively through a YAML file. Only the sensors you list in the YAML are compiled into the firmware, keeping the binary small. Once flashed, the ESP32 connects to your Wi-Fi network and streams sensor data to Home Assistant via the native ESPHome API (encrypted).
+
+### Home Assistant -- The Smart Home Platform
+
+[Home Assistant](https://www.home-assistant.io/) is an open-source home automation platform. Once the gPlugK is running ESPHome firmware on your network, Home Assistant auto-discovers the device and exposes all configured sensors as entities. From there you can:
+
+- Build **dashboards** to monitor real-time power consumption per phase (as shown in the screenshot above)
+- Set up **automations** triggered by energy thresholds (e.g., notify when consumption exceeds a limit)
+- Track **long-term statistics** for energy usage (kWh) using the Energy Dashboard
+- Forward data to **InfluxDB**, **Grafana**, or other external systems for advanced analytics
 
 ## Supported Hardware
 
 - **Meter:** Kamstrup Omnipower
 - **Adapter:** [gPlugK](https://gplug.ch/produkte/gplugk/)
 - **Platform:** ESP32 (ESP-IDF framework)
-
-## Protocol Stack
-
-```
-UART (2400 baud) -> HDLC framing -> DLMS/COSEM -> AES-GCM decrypt -> OBIS decode -> Sensor publish
-```
 
 ## Requirements
 
@@ -33,20 +61,9 @@ Reference the component as an external component in your ESPHome YAML config:
 
 ```yaml
 external_components:
-  - source:
-      type: local
-      path: components/
-```
-
-Or from a git repository:
-
-```yaml
-external_components:
-  - source:
-      type: git
-      url: https://github.com/YOUR_USER/gplugk
-      ref: main
+  - source: github://jluthiger/esphome-gplugk
     components: [gplugk]
+    refresh: 1s
 ```
 
 ## Configuration
@@ -64,16 +81,15 @@ esp32:
     type: esp-idf
 
 external_components:
-  - source:
-      type: local
-      path: components/
+  - source: github://jluthiger/esphome-gplugk
+    components: [gplugk]
+    refresh: 1s
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
 logger:
-  level: DEBUG
 
 api:
 
@@ -91,17 +107,17 @@ gplugk:
 
 ### Component Configuration
 
-| Parameter | Required | Description |
-|---|---|---|
-| `decryption_key` | Yes | 32 hex character string (16 bytes AES key) from your energy provider |
+| Parameter        | Required | Description                                                          |
+| ---------------- | -------- | -------------------------------------------------------------------- |
+| `decryption_key` | Yes      | 32 hex character string (16 bytes AES key) from your energy provider |
 
 ### UART Configuration
 
-| Parameter | Value |
-|---|---|
-| `baud_rate` | `2400` |
-| `rx_pin` | GPIO connected to the gPlugK adapter |
-| `rx_buffer_size` | `1024` (recommended) |
+| Parameter        | Value                                |
+| ---------------- | ------------------------------------ |
+| `baud_rate`      | `2400`                               |
+| `rx_pin`         | GPIO connected to the gPlugK adapter |
+| `rx_buffer_size` | `1024` (recommended)                 |
 
 ## Sensors
 
@@ -205,16 +221,28 @@ text_sensor:
 
 ## Build & Deploy
 
-```bash
-# Compile firmware
-esphome compile esp-gplugk.example.yaml
+The recommended way to install and update the firmware is wirelessly (OTA) through the ESPHome Builder add-on in Home Assistant.
 
-# Compile and flash to device
-esphome run esp-gplugk.example.yaml
+### Initial Setup
 
-# View live logs
-esphome logs esp-gplugk.example.yaml
-```
+1. In Home Assistant, go to **Settings > Add-ons > Add-on Store** and install the **ESPHome Builder** add-on
+2. Start the add-on and open its **Web UI**
+3. Click **+ New Device**, choose a name (e.g. `esp-gplugk`), and select **ESP32-C3**
+4. Replace the generated YAML with your configuration (see [Configuration](#configuration) above), making sure to include the `external_components`, `uart`, and `gplugk` sections
+5. For the very first flash, connect the gPlugK via USB-C to the machine running Home Assistant and click **Install** > **Plug into this computer**
+
+### Wireless Updates (OTA)
+
+Once the initial USB flash is done, all subsequent updates are performed over Wi-Fi:
+
+1. Open the **ESPHome Builder** Web UI in Home Assistant
+2. Find your device and click **Edit** to modify the YAML if needed
+3. Click **Install** > **Wirelessly** -- the firmware is compiled in the cloud and pushed to the gPlugK over your local network
+4. The device reboots automatically with the new firmware; the status LED blinks when it starts receiving meter data again
+
+### Viewing Logs
+
+To debug or verify that data is being received, click the **Logs** button on your device in the ESPHome Builder Web UI. This opens a live log stream showing UART reception, decryption status, and sensor values.
 
 ## License
 

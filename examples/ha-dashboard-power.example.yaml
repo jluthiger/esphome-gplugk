@@ -1,0 +1,63 @@
+title: Smart Meter Power
+views:
+  - title: Active Power
+    path: active-power
+    cards:
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            name: Active Power + (Import)
+            entity: sensor.esp_gplugk_active_power
+            min: 0
+            max: 9000
+            unit: W
+            segments:
+              - from: 0
+                color: '#FF9999'
+              - from: 3000
+                color: '#FF0000'
+              - from: 6000
+                color: '#8B0000'
+          - type: gauge
+            name: Active Power - (Export)
+            entity: sensor.esp_gplugk_active_power_2
+            unit: W
+            min: 0
+            max: 9000
+            segments:
+              - from: 0
+                color: '#90EE90'
+              - from: 3000
+                color: '#32CD32'
+              - from: 6000
+                color: '#006400'
+      - type: entities
+        title: Per-Phase Active Power
+        entities:
+          - entity: sensor.esp_gplugk_active_power_l1
+            name: Active Power L1
+          - entity: sensor.esp_gplugk_active_power_l2
+            name: Active Power L2
+          - entity: sensor.esp_gplugk_active_power_l3
+            name: Active Power L3
+          - type: divider
+          - entity: sensor.esp_gplugk_active_power_l1_2
+            name: Active Power - L1
+          - entity: sensor.esp_gplugk_active_power_l2_2
+            name: Active Power - L2
+          - entity: sensor.esp_gplugk_active_power_l3_2
+            name: Active Power - L3
+      - type: history-graph
+        title: Power Trend (6 h)
+        hours_to_show: 6
+        entities:
+          - entity: sensor.esp_gplugk_active_power_plus
+            name: Import Total
+          - entity: sensor.esp_gplugk_active_power_minus
+            name: Export Total
+          - entity: sensor.esp_gplugk_active_power_l1
+            name: Import L1
+          - entity: sensor.esp_gplugk_active_power_l2
+            name: Import L2
+          - entity: sensor.esp_gplugk_active_power_l3
+            name: Import L3
