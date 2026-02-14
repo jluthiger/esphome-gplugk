@@ -57,7 +57,7 @@ The firmware is configured declaratively through a YAML file. Only the sensors y
 
 ## Installation
 
-Reference the component as an external component in your ESPHome YAML config:
+Add the component as an external component in your ESPHome YAML config:
 
 ```yaml
 external_components:
@@ -65,6 +65,46 @@ external_components:
     components: [gplugk]
     refresh: 1s
 ```
+
+### Using the Command Line
+
+1. Install [ESPHome](https://esphome.io/guides/installing_esphome) if you haven't already:
+
+   ```bash
+   pip install esphome
+   ```
+
+2. Create a YAML configuration file (e.g. `esp-gplugk.yaml`) with the `external_components` block above and your sensor configuration (see [Configuration](#configuration))
+
+3. Compile and flash via USB (first time):
+
+   ```bash
+   esphome compile esp-gplugk.yaml
+   esphome run esp-gplugk.yaml
+   ```
+
+4. For subsequent updates over Wi-Fi (OTA):
+
+   ```bash
+   esphome run esp-gplugk.yaml
+   ```
+
+    ESPHome will automatically detect the device on the network and flash wirelessly.
+
+5. To view live logs:
+
+   ```bash
+   esphome logs esp-gplugk.yaml
+   ```
+
+### Using the ESPHome Builder Add-on in Home Assistant
+
+1. In Home Assistant, go to **Settings > Add-ons > Add-on Store** and install the **ESPHome Builder** add-on
+2. Start the add-on and open its **Web UI**
+3. Click **+ New Device**, choose a name (e.g. `esp-gplugk`), and select **ESP32-C3**
+4. Replace the generated YAML with your configuration (see [Configuration](#configuration)), making sure to include the `external_components`, `uart`, and `gplugk` sections
+5. For the first flash, connect the gPlugK via USB-C and click **Install** > **Plug into this computer**
+6. For subsequent updates, click **Install** > **Wirelessly** -- the firmware is compiled and pushed over your local network
 
 ## Configuration
 
