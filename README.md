@@ -57,39 +57,43 @@ The firmware is configured declaratively through a YAML file. Only the sensors y
 
 ## Installation
 
-Add the component as an external component in your ESPHome YAML config:
+Choose one of the two methods below. Both produce the same result -- a gPlugK running ESPHome firmware on your Wi-Fi network.
 
-```yaml
-external_components:
-  - source: github://jluthiger/esphome-gplugk
-    components: [gplugk]
-    refresh: 1s
-```
+### Option A: ESPHome Builder Add-on (recommended)
 
-### Using the Command Line
+Best if you already run Home Assistant with add-on support (Home Assistant OS or Supervised).
 
-1. Install [ESPHome](https://esphome.io/guides/installing_esphome) if you haven't already:
+1. Go to **Settings > Add-ons > Add-on Store** and install the **ESPHome Builder** add-on
+2. Start the add-on and open its **Web UI**
+3. Click **+ New Device**, choose a name (e.g. `esp-gplugk`), and select **ESP32-C3**
+4. Replace the generated YAML with your configuration (see [Configuration](#configuration)), making sure to include the `external_components`, `uart`, and `gplugk` sections
+5. Connect the gPlugK via USB-C and click **Install** > **Plug into this computer** (first time only)
+6. For subsequent updates, click **Install** > **Wirelessly**
+7. Click **Logs** on your device to verify data is being received
+
+### Option B: Command Line
+
+Best if you prefer working in a terminal or don't use the HA add-on.
+
+1. Install [ESPHome](https://esphome.io/guides/installing_esphome):
 
    ```bash
    pip install esphome
    ```
 
-2. Create a YAML configuration file (e.g. `esp-gplugk.yaml`) with the `external_components` block above and your sensor configuration (see [Configuration](#configuration))
+2. Create a YAML configuration file (e.g. `esp-gplugk.yaml`) with your sensor configuration (see [Configuration](#configuration))
 
 3. Compile and flash via USB (first time):
 
    ```bash
-   esphome compile esp-gplugk.yaml
    esphome run esp-gplugk.yaml
    ```
 
-4. For subsequent updates over Wi-Fi (OTA):
+4. For subsequent updates, the same command detects the device on Wi-Fi and flashes wirelessly (OTA):
 
    ```bash
    esphome run esp-gplugk.yaml
    ```
-
-    ESPHome will automatically detect the device on the network and flash wirelessly.
 
 5. To view live logs:
 
@@ -97,21 +101,12 @@ external_components:
    esphome logs esp-gplugk.yaml
    ```
 
-### Using the ESPHome Builder Add-on in Home Assistant
-
-1. In Home Assistant, go to **Settings > Add-ons > Add-on Store** and install the **ESPHome Builder** add-on
-2. Start the add-on and open its **Web UI**
-3. Click **+ New Device**, choose a name (e.g. `esp-gplugk`), and select **ESP32-C3**
-4. Replace the generated YAML with your configuration (see [Configuration](#configuration)), making sure to include the `external_components`, `uart`, and `gplugk` sections
-5. For the first flash, connect the gPlugK via USB-C and click **Install** > **Plug into this computer**
-6. For subsequent updates, click **Install** > **Wirelessly** -- the firmware is compiled and pushed over your local network
-
 ## Configuration
 
-see examples:
+Full examples:
 
-- for [esphome](./examples/esp-gplugk.example.yaml)
-- for [home assistant](./examples/ha-dashboard-power.example.yaml)
+- [ESPHome YAML](./examples/esp-gplugk.example.yaml)
+- [Home Assistant dashboard](./examples/ha-dashboard-power.example.yaml)
 
 ### Minimal Example
 
@@ -264,30 +259,14 @@ text_sensor:
       name: "Meter Name"
 ```
 
-## Build & Deploy
+## Troubleshooting
 
-The recommended way to install and update the firmware is wirelessly (OTA) through the ESPHome Builder add-on in Home Assistant.
+To debug or verify that data is being received:
 
-### Initial Setup
+- **ESPHome Builder:** Click the **Logs** button on your device in the Web UI
+- **Command line:** Run `esphome logs esp-gplugk.yaml`
 
-1. In Home Assistant, go to **Settings > Add-ons > Add-on Store** and install the **ESPHome Builder** add-on
-2. Start the add-on and open its **Web UI**
-3. Click **+ New Device**, choose a name (e.g. `esp-gplugk`), and select **ESP32-C3**
-4. Replace the generated YAML with your configuration (see [Configuration](#configuration) above), making sure to include the `external_components`, `uart`, and `gplugk` sections
-5. For the very first flash, connect the gPlugK via USB-C to the machine running Home Assistant and click **Install** > **Plug into this computer**
-
-### Wireless Updates (OTA)
-
-Once the initial USB flash is done, all subsequent updates are performed over Wi-Fi:
-
-1. Open the **ESPHome Builder** Web UI in Home Assistant
-2. Find your device and click **Edit** to modify the YAML if needed
-3. Click **Install** > **Wirelessly** -- the firmware is compiled in the cloud and pushed to the gPlugK over your local network
-4. The device reboots automatically with the new firmware; the status LED blinks when it starts receiving meter data again
-
-### Viewing Logs
-
-To debug or verify that data is being received, click the **Logs** button on your device in the ESPHome Builder Web UI. This opens a live log stream showing UART reception, decryption status, and sensor values.
+The live log stream shows UART reception, decryption status, and sensor values. The status LED on the gPlugK blinks when it receives meter data.
 
 ## License
 
