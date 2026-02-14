@@ -22,6 +22,8 @@ The [gPlugK](https://gplug.ch/produkte/gplugk/) is a compact IoT adapter that pl
 
 The adapter receives encrypted DLMS/COSEM frames from the smart meter at 2400 baud over its UART interface. No soldering or external wiring is required -- just plug it in.
 
+**Remark:** You will find in this [Blog](https://gplug.ch/blog/gpluge-als-esphome-device/) information how to setup a [gPlugD-E](https://gplug.ch/produkte/gplugd-e/) IoT adapter as ESPHome device.
+
 ### ESPHome -- The Firmware
 
 [ESPHome](https://esphome.io/) is an open-source system for building custom firmware for ESP32 and ESP8266 microcontrollers. This repository provides a custom ESPHome component (`gplugk`) that handles the complete protocol stack running on the gPlugK adapter:
